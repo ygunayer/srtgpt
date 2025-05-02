@@ -4,6 +4,7 @@ import argparse
 import math
 import srt
 import os
+from typing import List
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
@@ -20,11 +21,6 @@ Here's the subtitles:
 {srt_content}
 ```
 """
-
-
-def build_prompt(chunk, language):
-    srt_content = srt.compose(chunk).strip()
-    return PROMPT_TEMPLATE.format(srt_content=srt_content, language=language).strip()
 
 
 def main():
@@ -45,13 +41,12 @@ def main():
     with open(args.filename) as f:
         subtitles = list(srt.parse(f.read()))
 
-    chunks = [
-        subtitles[i * args.chunk_size:(i + 1) * args.chunk_size]
-        for i in range(0, math.ceil(len(subtitles) / args.chunk_size))
-    ]
+    for i in range(0, len(subtitles), args.chunk_size):
+        chunk = subtitles[i:i+args.chunk_size]
 
-    for chunk in chunks:
-        prompt = build_prompt(chunk, args.language)
+        srt_content = srt.compose(chunk, start_index=i+1).strip()
+
+        prompt = PROMPT_TEMPLATE.format(srt_content=srt_content, language=args.language).strip()
 
         message = anthropic.messages.create(
             max_tokens=args.max_tokens,
@@ -61,6 +56,10 @@ def main():
             ],
             temperature=0.2,
         )
+
+        if i > 0:
+            print()
+
         for content in message.content:
             print(content.text, end=None, flush=True)
 
