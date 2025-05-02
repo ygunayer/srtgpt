@@ -12,7 +12,8 @@ load_dotenv()
 
 
 PROMPT_TEMPLATE = """
-Translate these subtitles into {language}. Do not change the timestamps too much, and make sure the lines match them. Keep the segment indexes and any other tags intact. Respond only with the translated subtitles in SRT format and nothing else.
+Translate these subtitles into {language}. Do not change the timestamps too much, and make sure the lines match them.
+Keep the segment indexes and any other tags intact. Respond only with the translated subtitles in SRT format and nothing else.
 
 Here's the subtitles:
 ```srt
@@ -51,15 +52,17 @@ def main():
 
     for chunk in chunks:
         prompt = build_prompt(chunk, args.language)
+
         message = anthropic.messages.create(
             max_tokens=args.max_tokens,
             model=args.model,
             messages=[
                 {"role": "user", "content": prompt},
             ],
+            temperature=0.2,
         )
-        print(message.content)
-
+        for content in message.content:
+            print(content.text, end=None, flush=True)
 
 if __name__ == "__main__":
     main()
