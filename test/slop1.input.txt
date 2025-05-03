@@ -1,0 +1,13 @@
+Sure, here's the translation you asked:
+
+```srt
+1
+00:00:02,377 --> 00:00:04,057
+Foo
+bar
+
+2
+00:00:04,129 --> 00:00:05,481
+Baz
+quux.
+```

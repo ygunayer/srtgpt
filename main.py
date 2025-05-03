@@ -1,26 +1,13 @@
 #!/usr/bin/env python
 
 import argparse
-import math
-import srt
 import os
-from typing import List
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
+from srtgpt.translator import translate
 
 load_dotenv()
-
-
-PROMPT_TEMPLATE = """
-Translate these subtitles into {language}. Do not change the timestamps too much, and make sure the lines match them.
-Keep the segment indexes and any other tags intact. Respond only with the translated subtitles in SRT format and nothing else.
-
-Here's the subtitles:
-```srt
-{srt_content}
-```
-"""
 
 
 def main():
@@ -38,30 +25,16 @@ def main():
     parser.add_argument("--max-tokens", "-t", help="The maximum number of output tokens", default=4000)
 
     args = parser.parse_args()
-    with open(args.filename) as f:
-        subtitles = list(srt.parse(f.read()))
+    for text in translate(
+       args.filename,
+       args.language,
+       args.chunk_size,
+       args.max_tokens,
+       args.model,
+       anthropic,
+    ):
+        print(text, end=None, flush=True)
 
-    for i in range(0, len(subtitles), args.chunk_size):
-        chunk = subtitles[i:i+args.chunk_size]
-
-        srt_content = srt.compose(chunk, start_index=i+1).strip()
-
-        prompt = PROMPT_TEMPLATE.format(srt_content=srt_content, language=args.language).strip()
-
-        message = anthropic.messages.create(
-            max_tokens=args.max_tokens,
-            model=args.model,
-            messages=[
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.2,
-        )
-
-        if i > 0:
-            print()
-
-        for content in message.content:
-            print(content.text, end=None, flush=True)
 
 if __name__ == "__main__":
     main()
